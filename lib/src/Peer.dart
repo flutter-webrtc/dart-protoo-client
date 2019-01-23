@@ -213,18 +213,6 @@ class Peer{
           _handleNotification(message);
         }
     };
-
-		// _transport.on('message', (message){
-		// 	if (message.request){
-		// 		 _handleRequest(message);
-		// 	}
-		// 	else if (message.response){
-		// 		_handleResponse(message);
-		// 	}
-		// 	else if (message.notification){
-		// 		_handleNotification(message);
-		// 	}
-		// });
 	}
 
 	_handleRequest(request)

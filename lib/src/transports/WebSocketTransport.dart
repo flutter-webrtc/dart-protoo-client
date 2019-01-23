@@ -240,7 +240,7 @@ class WebSocketTransport{
       _socket.listen((data) {
         print('Recivied data: ' + data);
         JsonDecoder decoder = new JsonDecoder();
-        // this.onMessage(decoder.convert(data));
+        this.onMessage(decoder.convert(data));
       }, onDone: () {
         print('Closed by server!');
         if (this.onStateChange != null) {
@@ -259,43 +259,5 @@ class WebSocketTransport{
       }
     }
   }
-
-
+  
 }
-
-// class Signaling {
-//   var _socket;
-
-//   SignalingStateCallback onStateChange;
-
-//   void connect() async {
-//     try {
-//       _socket = await WebSocket.connect('');
-
-//       if (this.onStateChange != null) {
-//         this.onStateChange('');
-//       }
-
-//       _socket.listen((data) {
-//         print('Recivied data: ' + data);
-//         JsonDecoder decoder = new JsonDecoder();
-//         // this.onMessage(decoder.convert(data));
-//       }, onDone: () {
-//         print('Closed by server!');
-//         if (this.onStateChange != null) {
-//           this.onStateChange('');
-//         }
-//       });
-
-//       // _send('new', {
-//       //   'name': _name,
-//       //   'id': _selfId,
-//       //   'user_agent': 'flutter-webrtc/'+ Platform.operatingSystem +'-plugin 0.0.1'
-//       // });
-//     }catch(e){
-//       if(this.onStateChange != null){
-//         this.onStateChange('');
-//       }
-//     }
-//   }
-// }
