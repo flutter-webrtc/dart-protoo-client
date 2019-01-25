@@ -29,4 +29,6 @@ main() async {
   });
 
   await peer.connect();
+
+  peer.close();
 }

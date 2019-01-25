@@ -31,7 +31,7 @@ class Peer extends EventEmitter {
     // Custom data object.
     this._data = {};
 
-    this._transport = WebSocketTransport(url);
+    this._transport = new WebSocketTransport(url);
 
     // Map of sent requests' handlers indexed by request.id.
     this._requestHandlers = new Map();
