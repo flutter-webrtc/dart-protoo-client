@@ -1,27 +1,27 @@
 import 'utils.dart' as utils;
-import 'package:logging/logging.dart';
+import 'logger.dart';
 import 'dart:convert';
 
 const APP_NAME = 'protoo-client';
 var logger = new Logger(APP_NAME);
 
-
 class Message
 {
-	static parse(raw)
+  static JsonEncoder encoder = new JsonEncoder();
+  static JsonDecoder decoder = new JsonDecoder();
+
+	static Future<String> parse(raw)
 	{
 		var object;
-		var message = {};
+		var message;
 
 		try
 		{
-			object = JSON.decode(raw);
+			object = decoder.convert(raw);
 		}
 		catch (error)
 		{
-			logger.error('parse() | invalid JSON: %s', error);
-
-			return;
+			logger.failure('parse() | invalid JSON: ' + error);
 		}
 
 		// if (typeof object !== 'object' || Array.isArray(object))
@@ -32,98 +32,57 @@ class Message
 		// }
 
 		// Request.
-		if (object.request)
+		if (object['request'])
 		{
-			message.request = true;
+			message['request'] = true;
 
-			// if (typeof object.method !== 'string')
-			// {
-			// 	logger.error('parse() | missing/invalid method field');
-
-			// 	return;
-			// }
-      if(!(object.method is String)){
-        logger.error('parse() | missing/invalid method field');
-
-				return;
+      if(!(object['method'] is String)){
+        logger.failure('parse() | missing/invalid method field');
       }
 
-			// if (typeof object.id !== 'number')
-			// {
-			// 	logger.error('parse() | missing/invalid id field');
-
-			// 	return;
-			// }
-
-      if(!(object.id is double)){
-        logger.error('parse() | missing/invalid id field');
-
-				return;
+      if(!(object['id'] is num)){
+        logger.failure('parse() | missing/invalid id field');
       }
 
-			message.id = object.id;
-
-			message.method = object.method;
-			message.data = object.data || {};
+			message['id'] = object['id'];
+			message['method'] = object['method'];
+			message['data'] = object['data'] ?? {};
 		}
 		// Response.
-		else if (object.response)
+		else if (object['response'])
 		{
-			message.response = true;
-
-			// if (typeof object.id !== 'number')
-			// {
-			// 	logger.error('parse() | missing/invalid id field');
-
-			// 	return;
-			// }
-      if(!(object.id is double)){
-        logger.error('parse() | missing/invalid id field');
-				return;
+			message['response'] = true;
+      if(!(object['id'] is num)){
+        logger.failure('parse() | missing/invalid id field');
       }
-      
 
-			message.id = object.id;
+			message['id'] = object['id'];
 
 			// Success.
-			if (object.ok)
+			if (object['ok'])
 			{
-				message.ok = true;
-				message.data = object.data || {};
+				message['ok'] = true;
+				message['data'] = object['data'] ?? {};
 			}
 			// Error.
 			else
 			{
-				message.errorCode = object.errorCode;
-				message.errorReason = object.errorReason;
+				message['errorCode'] = object['errorCode'];
+				message['errorReason'] = object['errorReason'];
 			}
 		}
 		// Notification.
-		else if (object.notification)
+		else if (object['notification'])
 		{
-			message.notification = true;
-
-			// if (typeof object.method !== 'string')
-			// {
-			// 	logger.error('parse() | missing/invalid method field');
-
-			// 	return;
-			// }
-      if(!(object.method is String)){
-        logger.error('parse() | missing/invalid method field');
-
-				return;
+			message['notification'] = true;
+      if(!(object['method'] is String)){
+        logger.failure('parse() | missing/invalid method field');
       }
 
-			message.method = object.method;
-			message.data = object.data || {};
-		}
-		// Invalid.
-		else
-		{
-			logger.error('parse() | missing request/response field');
-
-			return;
+			message['method'] = object['method'];
+			message['data'] = object['data'] ?? {};
+		}else {
+			logger.failure('parse() | missing request/response field');
 		}
 
 		return message;
@@ -133,10 +92,10 @@ class Message
 	{
 		var requestObj =
 		{
-			request : true,
-			id      : utils.randomNumber(),
-			method  : method,
-			data    : data || {}
+			'request' : true,
+			'id'      : utils.randomNumber,
+			'method'  : method,
+			'data'    : data ?? {}
 		};
 
 		return requestObj;
@@ -146,10 +105,10 @@ class Message
 	{
 		var responseObj =
 		{
-			response : true,
-			id       : request.id,
-			ok       : true,
-			data     : data || {}
+			'response' : true,
+			'id'       : request['id'],
+			'ok'       : true,
+			'data'    : data ?? {}
 		};
 
 		return responseObj;
@@ -159,10 +118,10 @@ class Message
 	{
 		var responseObj =
 		{
-			response    : true,
-			id          : request.id,
-			errorCode   : errorCode,
-			errorReason : errorReason
+			'response'    : true,
+			'id'       : request['id'],
+			'errorCode'   : errorCode,
+			'errorReason' : errorReason
 		};
 
 		return responseObj;
@@ -172,9 +131,9 @@ class Message
 	{
 		var notificationObj =
 		{
-			notification : true,
-			method       : method,
-			data         : data || {}
+			'notification' : true,
+			'method'       : method,
+			'data '       : data ?? {},
 		};
 
 		return notificationObj;
