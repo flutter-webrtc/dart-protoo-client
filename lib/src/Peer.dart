@@ -124,10 +124,6 @@ class Peer extends EventEmitter {
     });
   }
 
-  clearTimeout(Timer timer) {
-    timer.cancel();
-  }
-
   Future<dynamic> send(method, data) async {
     var completer = new Completer();
     var request = Message.requestFactory(method, data);
@@ -135,14 +131,14 @@ class Peer extends EventEmitter {
       var handler = {
         'resolve': (data2) {
           var handler = _requestHandlers[request['id']];
-          clearTimeout(handler['timer']);
+          handler['timer'].cancel();
           if (this._requestHandlers.remove(request['id']) == null) return null;
           completer.complete(data2);
         },
         'reject': (error) {
           var handler = _requestHandlers[request['id']];
           if (this._requestHandlers.remove(request['id']) == null) return null;
-          clearTimeout(handler['timer']);
+          handler['timer'].cancel();
           completer.completeError(error);
         },
         'timer': new Timer.periodic(new Duration(milliseconds: REQUEST_TIMEOUT), (Timer timer)
@@ -152,7 +148,7 @@ class Peer extends EventEmitter {
           completer.completeError('request timeout');
         }),
         close: () {
-          clearTimeout(_requestHandlers[request['id']]['timer']);
+          _requestHandlers[request['id']]['timer'].cancel();
           completer.completeError('peer closed');
         }
       };
