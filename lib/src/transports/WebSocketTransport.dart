@@ -2,15 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:events2/events2.dart';
 import '../logger.dart';
-import '../Message.dart' show Message;
 
 const APP_NAME = 'protoo-client';
 var logger = new Logger(APP_NAME);
 
-// const W3CWebSocket = require('websocket').w3cwebsocket;
-// const retry = require('retry');
-
-// const WS_SUBPROTOCOL = 'protoo';
+const WS_SUBPROTOCOL = 'protoo';
 // const DEFAULT_RETRY_OPTIONS = {
 // 	retries    : 10,
 // 	factor     : 2,
@@ -67,8 +63,9 @@ class WebSocketTransport extends EventEmitter {
 
   void _setWebSocket() async {
     try {
-      _ws = await WebSocket.connect(this._url);
-      this.emit('open');
+      _ws = await WebSocket.connect(this._url, headers: {
+        'Sec-WebSocket-Protocol': WS_SUBPROTOCOL,
+      });
       _ws.listen((data) {
         print('Recivied data: ' + data);
         this.emit('message', decoder.convert(data));
@@ -76,6 +73,7 @@ class WebSocketTransport extends EventEmitter {
         print('Closed by server!');
         this.emit('close');
       });
+      this.emit('open');
     } catch (e) {
       this.emit('error', e.toString());
     }

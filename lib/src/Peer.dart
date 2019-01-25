@@ -146,9 +146,9 @@ class Peer extends EventEmitter {
       this.emit('disconnected');
     });
 
-    _transport.on('failed', (currentAttempt) {
-      logger.debug('emit "failed" [currentAttempt:' + currentAttempt + ']');
-      this.emit('failed', currentAttempt);
+    _transport.on('error', (currentAttempt) {
+      logger.debug('emit "error" [currentAttempt:' + currentAttempt + ']');
+      this.emit('error', currentAttempt);
     });
 
     _transport.on('close', () {
