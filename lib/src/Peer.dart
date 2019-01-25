@@ -50,56 +50,6 @@ class Peer extends EventEmitter {
 
   get closed => this._closed;
 
-  // send(method, data)
-  // {
-  // 	var request = Message.requestFactory(method, data);
-
-  // 	return this._transport.send(request)
-  // 		.then(() =>
-  // 		{
-  // 			return new Promise((pResolve, pReject) =>
-  // 			{
-  // 				const handler =
-  // 				{
-  // 					resolve : (data2) =>
-  // 					{
-  // 						if (!_requestHandlers.delete(request.id))
-  // 							return;
-
-  // 						clearTimeout(handler.timer);
-  // 						pResolve(data2);
-  // 					},
-
-  // 					reject : (error) =>
-  // 					{
-  // 						if (!_requestHandlers.delete(request.id))
-  // 							return;
-
-  // 						clearTimeout(handler.timer);
-  // 						pReject(error);
-  // 					},
-
-  // 					timer : setTimeout(() =>
-  // 					{
-  // 						if (!_requestHandlers.delete(request.id))
-  // 							return;
-
-  // 						pReject(new Error('request timeout'));
-  // 					}, REQUEST_TIMEOUT),
-
-  // 					close : () =>
-  // 					{
-  // 						clearTimeout(handler.timer);
-  // 						pReject(new Error('peer closed'));
-  // 					}
-  // 				};
-
-  // 				// Add handler stuff to the Map.
-  // 				_requestHandlers.set(request.id, handler);
-  // 			});
-  // 		});
-  // }
-
   notify(method, data) {
     var notification = Message.notificationFactory(method, data);
     return this._transport.send(notification);
@@ -127,7 +77,6 @@ class Peer extends EventEmitter {
   _handleTransport() {
     if (this._transport.closed) {
       this._closed = true;
-      //setTimeout(() => events.emit('close'));
       this.emit('close');
       return;
     }
@@ -175,9 +124,9 @@ class Peer extends EventEmitter {
     });
   }
 
-  clearTimeout(handler) {}
-
-  setTimeout(handler, timeout) {}
+  clearTimeout(Timer timer) {
+    timer.cancel();
+  }
 
   Future<dynamic> send(method, data) async {
     var completer = new Completer();
@@ -196,10 +145,12 @@ class Peer extends EventEmitter {
           clearTimeout(handler['timer']);
           completer.completeError(error);
         },
-        'timer': setTimeout(() {
+        'timer': new Timer.periodic(new Duration(milliseconds: REQUEST_TIMEOUT), (Timer timer)
+        {
+          timer.cancel();
           if (this._requestHandlers.remove(request['id'] == null)) return null;
           completer.completeError('request timeout');
-        }, REQUEST_TIMEOUT),
+        }),
         close: () {
           clearTimeout(_requestHandlers[request['id']]['timer']);
           completer.completeError('peer closed');

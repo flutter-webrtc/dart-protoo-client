@@ -27,7 +27,6 @@ class Message
 		// if (typeof object !== 'object' || Array.isArray(object))
 		// {
 		// 	logger.error('parse() | not an object');
-
 		// 	return;
 		// }
 

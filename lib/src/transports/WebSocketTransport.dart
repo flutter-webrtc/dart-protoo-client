@@ -5,8 +5,8 @@ import '../logger.dart';
 
 const APP_NAME = 'protoo-client';
 var logger = new Logger(APP_NAME);
-
 const WS_SUBPROTOCOL = 'protoo';
+
 // const DEFAULT_RETRY_OPTIONS = {
 // 	retries    : 10,
 // 	factor     : 2,
