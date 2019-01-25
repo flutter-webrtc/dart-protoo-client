@@ -208,7 +208,6 @@ class Peer extends EventEmitter {
       // Add handler stuff to the Map.
       this._requestHandlers[request['id']] = handler;
     });
-
     return completer.future;
   }
 

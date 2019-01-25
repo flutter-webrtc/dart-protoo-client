@@ -38,7 +38,7 @@ class WebSocketTransport extends EventEmitter {
       throw 'transport closed';
     }
     try {
-      print('send message: ' + encoder.convert(message));
+      logger.debug('send message: ' + encoder.convert(message));
       this._ws.add(encoder.convert(message));
       return message;
     } catch (error) {
@@ -67,10 +67,10 @@ class WebSocketTransport extends EventEmitter {
         'Sec-WebSocket-Protocol': WS_SUBPROTOCOL,
       });
       this._ws.listen((data) {
-        print('Recivied data: ' + data);
+        logger.debug('Recivied data: ' + data);
         this.emit('message', decoder.convert(data));
       }, onDone: () {
-        print('Closed by server!');
+        logger.debug('Closed by server!');
         this.emit('close');
       });
       this.emit('open');
