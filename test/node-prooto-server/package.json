@@ -1,0 +1,16 @@
+{
+  "private": true,
+  "name": "protoo-test-server",
+  "scripts": {
+    "lint": "eslint -c .eslintrc.js test.js",
+    "test": "tap --bail --color --reporter=spec test.js"
+  },
+  "dependencies": {
+    "tap": "^12.1.1",
+    "protoo-server": "^3.0.3",
+    "express": "^4.11.2"
+  },
+  "devDependencies": {
+    "eslint": "^5.10.0"
+  }
+}

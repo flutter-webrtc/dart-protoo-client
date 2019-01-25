@@ -31,13 +31,17 @@ class Peer extends EventEmitter {
     // Custom data object.
     this._data = {};
 
+    this._transport = WebSocketTransport(url);
+
     // Map of sent requests' handlers indexed by request.id.
     this._requestHandlers = new Map();
 
-    this._transport = WebSocketTransport(url);
-
     // Handle transport.
     _handleTransport();
+  }
+
+  void connect() async {
+    await this._transport.connect();
   }
 
   get data => this._data;
@@ -176,36 +180,36 @@ class Peer extends EventEmitter {
   setTimeout(handler, timeout) {}
 
   Future<dynamic> send(method, data) async {
+    var completer = new Completer();
     var request = Message.requestFactory(method, data);
-
-    this._transport.send(request).then(() {
+    this._transport.send(request).then((data) {
       var handler = {
         'resolve': (data2) {
-          if (!this._requestHandlers.remove(request['id'])) return null;
-
-          clearTimeout(_requestHandlers[request['id']]['timer']);
-
-          return data2;
+          var handler = _requestHandlers[request['id']];
+          clearTimeout(handler['timer']);
+          if (this._requestHandlers.remove(request['id']) == null) return null;
+          completer.complete(data2);
         },
         'reject': (error) {
-          if (!this._requestHandlers.remove(request['id'])) return;
-
-          clearTimeout(_requestHandlers[request['id']]['timer']);
-          throw (error);
+          var handler = _requestHandlers[request['id']];
+          if (this._requestHandlers.remove(request['id']) == null) return null;
+          clearTimeout(handler['timer']);
+          completer.completeError(error);
         },
         'timer': setTimeout(() {
-          if (!this._requestHandlers.remove(request['id'])) return;
-
-          throw ('request timeout');
+          if (this._requestHandlers.remove(request['id'] == null)) return null;
+          completer.completeError('request timeout');
         }, REQUEST_TIMEOUT),
         close: () {
           clearTimeout(_requestHandlers[request['id']]['timer']);
-          throw ('peer closed');
+          completer.completeError('peer closed');
         }
       };
       // Add handler stuff to the Map.
       this._requestHandlers[request['id']] = handler;
     });
+
+    return completer.future;
   }
 
   _handleRequest(request) {
@@ -216,13 +220,12 @@ class Peer extends EventEmitter {
         // accept() function.
         (data) {
       var response = Message.successResponseFactory(request, data);
-
       _transport.send(response).catchError((error) {
         logger.warn('accept() failed, response could not be sent: ' + error);
       });
     }, (errorCode, errorReason) {
       // reject() function.
-      if (errorCode is num) {
+      if (!(errorCode is num)) {
         errorReason = errorCode.toString();
         errorCode = 500;
       } else if (errorCode is num && errorReason is String) {
@@ -241,19 +244,21 @@ class Peer extends EventEmitter {
   _handleResponse(response) {
     var handler = _requestHandlers[response['id']];
 
-    if (!handler) {
+    if (handler == null) {
       logger.error('received response does not match any sent request');
       return;
     }
 
-    if (response['ok']) {
-      handler.resolve(response['data']);
+    if (response['ok'] != null && response['ok'] == true) {
+      var resolve = handler['resolve'];
+      resolve(response['data']);
     } else {
       var error = {
-        'code': response['errorCode'],
-        'error': response['errorReason']
+        'code': response['errorCode'] ?? 500,
+        'error': response['errorReason']?? ''
       };
-      handler.reject(error);
+      var reject = handler['reject'];
+      reject(error);
     }
   }
 

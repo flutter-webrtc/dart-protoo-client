@@ -29,20 +29,20 @@ class WebSocketTransport extends EventEmitter {
     this._ws = null;
     // Closed flag.
     this._closed = false;
-
-    this._setWebSocket();
   }
 
   get closed => this._closed;
 
-  send(message) {
+  Future<dynamic> send(message) async {
     if (this._closed) {
       throw 'transport closed';
     }
     try {
-      this._ws.send(encoder.convert(message));
+      print('send message: ' + encoder.convert(message));
+      this._ws.add(encoder.convert(message));
+      return message;
     } catch (error) {
-      logger.failure('send() | error sending message: ' + error);
+      logger.failure('send() | error sending message: ' + error.toString());
     }
   }
 
@@ -61,12 +61,12 @@ class WebSocketTransport extends EventEmitter {
     }
   }
 
-  void _setWebSocket() async {
+  void connect() async {
     try {
-      _ws = await WebSocket.connect(this._url, headers: {
+      this._ws = await WebSocket.connect(this._url, headers: {
         'Sec-WebSocket-Protocol': WS_SUBPROTOCOL,
       });
-      _ws.listen((data) {
+      this._ws.listen((data) {
         print('Recivied data: ' + data);
         this.emit('message', decoder.convert(data));
       }, onDone: () {
