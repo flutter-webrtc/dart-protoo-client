@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'dart:async';
-import 'dart:io';
 import 'package:events2/events2.dart';
 import 'transports/WebSocketTransport.dart' show WebSocketTransport;
 import 'Message.dart';
@@ -131,24 +129,32 @@ class Peer extends EventEmitter {
       var handler = {
         'resolve': (data2) {
           var handler = _requestHandlers[request['id']];
+          if (handler == null)
+            completer.completeError('Request handler is not in map!');
           handler['timer'].cancel();
-          if (this._requestHandlers.remove(request['id']) == null) return null;
+          this._requestHandlers.remove(request['id']);
           completer.complete(data2);
         },
         'reject': (error) {
           var handler = _requestHandlers[request['id']];
-          if (this._requestHandlers.remove(request['id']) == null) return null;
+          if (handler == null)
+            completer.completeError('Request handler is not in map!');
           handler['timer'].cancel();
+          this._requestHandlers.remove(request['id']);
           completer.completeError(error);
         },
-        'timer': new Timer.periodic(new Duration(milliseconds: REQUEST_TIMEOUT), (Timer timer)
-        {
+        'timer': new Timer.periodic(new Duration(milliseconds: REQUEST_TIMEOUT),
+            (Timer timer) {
           timer.cancel();
-          if (this._requestHandlers.remove(request['id'] == null)) return null;
+          if (this._requestHandlers.remove(request['id']) == null)
+            completer.completeError('Request handler is not in map!');
           completer.completeError('request timeout');
         }),
         close: () {
-          _requestHandlers[request['id']]['timer'].cancel();
+          var handler = _requestHandlers[request['id']];
+          if (handler == null)
+            completer.completeError('Request handler is not in map!');
+          handler['timer'].cancel();
           completer.completeError('peer closed');
         }
       };
@@ -189,7 +195,6 @@ class Peer extends EventEmitter {
 
   _handleResponse(response) {
     var handler = _requestHandlers[response['id']];
-
     if (handler == null) {
       logger.error('received response does not match any sent request');
       return;
@@ -201,7 +206,7 @@ class Peer extends EventEmitter {
     } else {
       var error = {
         'code': response['errorCode'] ?? 500,
-        'error': response['errorReason']?? ''
+        'error': response['errorReason'] ?? ''
       };
       var reject = handler['reject'];
       reject(error);
