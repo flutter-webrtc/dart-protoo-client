@@ -7,4 +7,4 @@ environment:
   sdk: '<3.0.0'
 
 dependencies:
-  events2: ^0.1.2
+  events2: ^0.1.3
