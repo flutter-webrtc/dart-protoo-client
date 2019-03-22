@@ -1,3 +1,5 @@
+[![pub package](https://img.shields.io/pub/v/protoo_client.svg)](https://pub.dartlang.org/packages/dart-protoo-client)
+
 # protoo-client
 Dart version of the [protoo-client](https://github.com/ibc/protoo/tree/master/client) js library.
 
