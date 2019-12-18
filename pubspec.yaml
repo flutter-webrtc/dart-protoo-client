@@ -1,6 +1,5 @@
 name: protoo_client
-version: 0.1.0
-author: cloudwebrtc <duanweiwei1982@gmail.com>
+version: 0.2.0
 description: Dart version of the protoo-client library. 
 homepage: https://github.com/cloudwebrtc/dart-protoo-client
 environment:
