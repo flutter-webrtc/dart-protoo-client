@@ -1,1 +1,1 @@
-export 'src/Peer.dart';
+export 'src/peer.dart';

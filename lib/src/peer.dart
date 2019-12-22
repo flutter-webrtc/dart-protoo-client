@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:events2/events2.dart';
-import 'transports/WebSocketTransport.dart' show WebSocketTransport;
+import 'transports/websocket_transport.dart' show WebSocketTransport;
 import 'Message.dart';
 import 'logger.dart' show Logger;
 
