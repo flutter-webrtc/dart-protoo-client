@@ -14,7 +14,9 @@ class WebSocketImpl {
   OnCloseCallback onClose;
   final logger = Logger('Logger::HTML::WebSocket');
 
-  WebSocketImpl(this._url);
+  WebSocketImpl(url) {
+    this._url = url.replaceAll('https:', 'wss:');
+  }
 
   connect({Object protocols, Object headers}) async {
     logger.debug('connect $_url, $headers, $protocols');
@@ -39,7 +41,7 @@ class WebSocketImpl {
         this?.onClose(e.code, e.reason);
       });
     } catch (e) {
-      this?.onClose(e.code, e.reason);
+      this?.onClose(500, e.toString());
     }
   }
 

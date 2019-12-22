@@ -20,12 +20,10 @@ class WebSocketImpl {
   connect({Object protocols, Object headers}) async {
     logger.debug('connect $_url, $headers, $protocols');
     try {
-      _socket =
-          await WebSocket.connect(_url, protocols: protocols, headers: headers);
+     // _socket =
+     //     await WebSocket.connect(_url, protocols: protocols, headers: headers);
 
-      /// Allow self-signed certificate, for test only.
-      /// var parsed_url = Grammar.parse(this._url, 'absoluteURI');
-      /// _socket = await _connectForBadCertificate(parsed_url.scheme, parsed_url.host, parsed_url.port);
+      _socket = await _connectForBadCertificate(_url);
 
       this?.onOpen();
       _socket.listen((data) {
@@ -54,8 +52,7 @@ class WebSocketImpl {
   }
 
   /// For test only.
-  Future<WebSocket> _connectForBadCertificate(
-      String scheme, String host, int port) async {
+  Future<WebSocket> _connectForBadCertificate(url) async {
     try {
       Random r = new Random();
       String key = base64.encode(List<int>.generate(8, (_) => r.nextInt(255)));
@@ -67,9 +64,7 @@ class WebSocketImpl {
         return true;
       };
 
-      HttpClientRequest request = await client.getUrl(Uri.parse(
-          (scheme == 'wss' ? 'https' : 'http') +
-              '://$host:$port/ws')); // form the correct url here
+      HttpClientRequest request = await client.getUrl(Uri.parse(url)); // form the correct url here
 
       request.headers.add('Connection', 'Upgrade');
       request.headers.add('Upgrade', 'websocket');

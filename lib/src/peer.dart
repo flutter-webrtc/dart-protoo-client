@@ -126,44 +126,42 @@ class Peer extends EventEmitter {
     var completer = new Completer();
     var request = Message.requestFactory(method, data);
     try {
-      this._transport.send(request).then((data) {
-        var handler = {
-          'resolve': (data2) {
-            var handler = _requestHandlers[request['id']];
-            if (handler == null)
-              completer.completeError('Request handler is not in map!');
-            handler['timer'].cancel();
-            this._requestHandlers.remove(request['id']);
-            completer.complete(data2);
-          },
-          'reject': (error) {
-            var handler = _requestHandlers[request['id']];
-            if (handler == null)
-              completer.completeError('Request handler is not in map!');
-            handler['timer'].cancel();
-            this._requestHandlers.remove(request['id']);
-            completer.completeError(error);
-          },
-          'timer': new Timer.periodic(
-              new Duration(milliseconds: REQUEST_TIMEOUT),
-                  (Timer timer) {
-                timer.cancel();
-                if (this._requestHandlers.remove(request['id']) == null)
-                  completer.completeError('Request handler is not in map!');
-                completer.completeError('request timeout');
-              }),
-          close: () {
-            var handler = _requestHandlers[request['id']];
-            if (handler == null)
-              completer.completeError('Request handler is not in map!');
-            handler['timer'].cancel();
-            completer.completeError('peer closed');
-          }
-        };
-        // Add handler stuff to the Map.
-        this._requestHandlers[request['id']] = handler;
-      });
-    }catch(e) {
+      this._transport.send(request);
+      var handler = {
+        'resolve': (data2) {
+          var handler = _requestHandlers[request['id']];
+          if (handler == null)
+            completer.completeError('Request handler is not in map!');
+          handler['timer'].cancel();
+          this._requestHandlers.remove(request['id']);
+          completer.complete(data2);
+        },
+        'reject': (error) {
+          var handler = _requestHandlers[request['id']];
+          if (handler == null)
+            completer.completeError('Request handler is not in map!');
+          handler['timer'].cancel();
+          this._requestHandlers.remove(request['id']);
+          completer.completeError(error);
+        },
+        'timer': new Timer.periodic(new Duration(milliseconds: REQUEST_TIMEOUT),
+            (Timer timer) {
+          timer.cancel();
+          if (this._requestHandlers.remove(request['id']) == null)
+            completer.completeError('Request handler is not in map!');
+          completer.completeError('request timeout');
+        }),
+        close: () {
+          var handler = _requestHandlers[request['id']];
+          if (handler == null)
+            completer.completeError('Request handler is not in map!');
+          handler['timer'].cancel();
+          completer.completeError('peer closed');
+        }
+      };
+      // Add handler stuff to the Map.
+      this._requestHandlers[request['id']] = handler;
+    } catch (e) {
       completer.completeError('transport error');
     }
     return completer.future;
