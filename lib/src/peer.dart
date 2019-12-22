@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:events2/events2.dart';
 import 'transports/websocket_transport.dart' show WebSocketTransport;
-import 'Message.dart';
+import 'message.dart';
 import 'logger.dart' show Logger;
 
 // Max time waiting for a response.
