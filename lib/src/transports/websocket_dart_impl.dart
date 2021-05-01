@@ -20,8 +20,8 @@ class WebSocketImpl {
   connect({Object protocols, Object headers}) async {
     logger.debug('connect $_url, $headers, $protocols');
     try {
-     // _socket =
-     //     await WebSocket.connect(_url, protocols: protocols, headers: headers);
+      // _socket =
+      //     await WebSocket.connect(_url, protocols: protocols, headers: headers);
 
       _socket = await _connectForBadCertificate(_url);
 
@@ -64,7 +64,8 @@ class WebSocketImpl {
         return true;
       };
 
-      HttpClientRequest request = await client.getUrl(Uri.parse(url)); // form the correct url here
+      HttpClientRequest request =
+          await client.getUrl(Uri.parse(url)); // form the correct url here
 
       request.headers.add('Connection', 'Upgrade');
       request.headers.add('Upgrade', 'websocket');
