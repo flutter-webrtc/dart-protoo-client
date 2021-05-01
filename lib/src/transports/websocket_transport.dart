@@ -2,8 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:events2/events2.dart';
-import 'websocket_dart_impl.dart'
-    if (dart.library.js) 'websocket_web_impl.dart';
+import 'websocket_dart_impl.dart';
 import '../logger.dart';
 
 const APP_NAME = 'protoo-client';
