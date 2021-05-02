@@ -51,6 +51,7 @@ class WebTransport extends TransportInterface {
   _runWebSocket() {
     this._ws = new WebSocket(this._url, 'protoo');
     this._ws.onOpen.listen((e) {
+      logger.debug('onOpen');
       this.safeEmit('open');
     });
 

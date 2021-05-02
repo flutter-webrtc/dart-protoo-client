@@ -21,7 +21,7 @@ class Message {
     }
 
     // Request.
-    if (object['request']) {
+    if (object['request'] != null) {
       message['request'] = true;
 
       if (!(object['method'] is String)) {
@@ -37,7 +37,7 @@ class Message {
       message['data'] = object['data'] ?? {};
     }
     // Response.
-    else if (object['response']) {
+    else if (object['response'] != null) {
       message['response'] = true;
       if (!(object['id'] is num)) {
         logger.failure('parse() | missing/invalid id field');
@@ -57,7 +57,7 @@ class Message {
       }
     }
     // Notification.
-    else if (object['notification']) {
+    else if (object['notification'] != null) {
       message['notification'] = true;
       if (!(object['method'] is String)) {
         logger.failure('parse() | missing/invalid method field');

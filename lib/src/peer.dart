@@ -60,9 +60,9 @@ class Peer extends EnhancedEventEmitter {
   request(method, data) async {
     final completer = new Completer();
     final request = Message.createRequest(method, data);
-
-    logger
-        .debug('request() [method:' + method + ', id: ' + request['id'] + ']');
+    final requestId = request['id'].toString();
+    logger.debug(
+        'request() [method:' + method.toString() + ', id: ' + requestId + ']');
 
     // This may throw.
     await this._transport.send(request);
@@ -72,29 +72,32 @@ class Peer extends EnhancedEventEmitter {
       'id': request['id'],
       'method': request['method'],
       'resolve': (data2) {
-        final sent = _sents.remove(request['id']);
+        final sent = _sents.remove(requestId);
         if (sent == null) return;
         sent['timer'].cancel();
         completer.complete(data2);
       },
       'reject': (error) {
-        final sent = _sents.remove(request['id']);
+        final sent = _sents.remove(requestId);
         if (sent == null) return;
         sent['timer'].cancel();
         completer.completeError(error);
       },
       'timer': new Timer.periodic(new Duration(milliseconds: timeout),
           (Timer timer) {
-        if (this._sents.remove(request['id']) == null) return;
+        if (this._sents.remove(requestId) == null) return;
 
         completer.completeError('request timeout');
       }),
       'close': () {
-        var handler = _sents[request['id']];
+        var handler = _sents[requestId];
         handler['timer'].cancel();
         completer.completeError('peer closed');
       }
     };
+
+    _sents[requestId] = sent;
+    return completer.future;
   }
 
   _handleTransport() {
@@ -201,7 +204,7 @@ class Peer extends EnhancedEventEmitter {
   }
 
   _handleResponse(response) {
-    final sent = _sents[response['id']];
+    final sent = _sents[response['id'].toString()];
     if (sent == null) {
       logger.error('received response does not match any sent request');
       return;
