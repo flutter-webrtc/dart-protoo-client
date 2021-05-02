@@ -1,20 +1,17 @@
 import 'package:protoo_client/protoo_client.dart';
+import 'package:protoo_client/src/transports/WebTransport.dart';
+
+final url = 'wss://v3demo.mediasoup.org:4443';
+final roomId = 'asdasdds';
+final peerId = 'zxcvvczx';
 
 main() async {
-
-  Peer peer = new Peer('https://127.0.0.1:8443/ws?peer-id=xxxxx');
+  Peer peer = new Peer(WebTransport('$url/?roomId=$roomId&peerId=$peerId'));
 
   peer.on('open', () {
-
     print('open');
 
-    peer.send('login', {}).then((data) {
-      print('response: ' + data.toString());
-    }).catchError((error) {
-      print('response error: ' + error.toString());
-    });
-
-    peer.send('offer', {'sdp':'empty!'}).then((data) {
+    peer.request('method', 'getRouterRtpCapabilities').then((data) {
       print('response: ' + data.toString());
     }).catchError((error) {
       print('response error: ' + error.toString());
@@ -31,11 +28,11 @@ main() async {
 
   peer.on('request', (request, accept, reject) {
     print('request: ' + request.toString());
-    accept({ 'key1':"value1", 'key2':"value2"});
+    accept({'key1': "value1", 'key2': "value2"});
     //reject(404, 'Oh no~~~~~');
   });
 
-  await peer.connect();
+  //await peer.connect();
 
   //peer.close();
 }

@@ -1,113 +1,155 @@
 import 'dart:async';
-import 'package:events2/events2.dart';
-import 'transports/websocket_transport.dart' show WebSocketTransport;
-import 'message.dart';
-import 'logger.dart' show Logger;
 
-// Max time waiting for a response.
-const REQUEST_TIMEOUT = 20000;
-var APP_NAME = 'protoo-client';
+import 'EnhancedEventEmitter.dart';
+import 'Logger.dart';
+import 'Message.dart';
+import 'transports/TransportInterface.dart';
 
-class Peer extends EventEmitter {
-  var _socket;
-  var _closed;
-  var _data;
-  var _url;
-  Map<dynamic, dynamic> _requestHandlers;
-  var logger = new Logger(APP_NAME);
-  var _transport;
+final logger = new Logger('Peer');
 
-  Peer(url) {
+class Peer extends EnhancedEventEmitter {
+  // Closed flag.
+  bool _closed = false;
+  // Connected flag.
+  bool _connected = false;
+  // Custom data object.
+  dynamic _data = {};
+  // Map of pending sent request objects indexed by request id.
+  var _sents = Map<String, dynamic>();
+  // Transport.
+  TransportInterface _transport;
+
+  Peer(TransportInterface transport) {
+    _transport = transport;
     logger.debug('constructor()');
-
-    // Transport.
-    this._url = url;
-
-    // Closed flag.
-    this._closed = false;
-
-    // Custom data object.
-    this._data = {};
-
-    this._transport = new WebSocketTransport(url);
-
-    // Map of sent requests' handlers indexed by request.id.
-    this._requestHandlers = new Map();
-
-    // Handle transport.
     _handleTransport();
   }
 
-  void connect() async {
-    await this._transport.connect();
-  }
+  /// Whether the Peer is closed.
+  bool get closed => _closed;
 
-  get data => this._data;
+  /// Whether the Peer is connected.
+  bool get connected => _connected;
 
-  set data(bool data) => this._data = data;
-
-  get closed => this._closed;
-
-  notify(method, data) {
-    var notification = Message.notificationFactory(method, data);
-    return this._transport.send(notification);
-  }
+  /// App custom data
+  dynamic get data => _data;
 
   close() {
+    if (this._closed) return;
+
     logger.debug('close()');
 
-    if (_closed) return;
+    this._closed = true;
+    this._connected = false;
 
-    _closed = true;
+    // close transport
+    this._transport.close();
 
-    // Close transport.
-    _transport.close();
-
-    // Close every pending request handler.
-    _requestHandlers.forEach((key, handler) {
-      handler.close();
+    // Close every pending sent.
+    _sents.forEach((key, sent) {
+      sent.close();
     });
 
     // Emit 'close' event.
-    this.emit('close');
+    this.safeEmit('close');
+  }
+
+  /// Send a protoo request to the server-side Room.
+  request(method, data) async {
+    final completer = new Completer();
+    final request = Message.createRequest(method, data);
+
+    logger
+        .debug('request() [method:' + method + ', id: ' + request['id'] + ']');
+
+    // This may throw.
+    await this._transport.send(request);
+
+    int timeout = (1500 * (15 + (0.1 * this._sents.length))) as int;
+    final sent = {
+      'id': request['id'],
+      'method': request['method'],
+      'resolve': (data2) {
+        final sent = _sents.remove(request['id']);
+        if (sent == null) return;
+        sent['timer'].cancel();
+        completer.complete(data2);
+      },
+      'reject': (error) {
+        final sent = _sents.remove(request['id']);
+        if (sent == null) return;
+        sent['timer'].cancel();
+        completer.completeError(error);
+      },
+      'timer': new Timer.periodic(new Duration(milliseconds: timeout),
+          (Timer timer) {
+        if (this._sents.remove(request['id']) == null) return;
+
+        completer.completeError('request timeout');
+      }),
+      'close': () {
+        var handler = _sents[request['id']];
+        handler['timer'].cancel();
+        completer.completeError('peer closed');
+      }
+    };
   }
 
   _handleTransport() {
     if (this._transport.closed) {
       this._closed = true;
-      this.emit('close');
+
+      Future.delayed(Duration(seconds: 0), () {
+        if (!_closed) {
+          this._connected = false;
+
+          this.safeEmit('close');
+        }
+      });
+
       return;
     }
 
     _transport.on('connecting', (currentAttempt) {
       logger.debug('emit "connecting" [currentAttempt:' + currentAttempt + ']');
-      this.emit('connecting', currentAttempt);
+      this.safeEmit('connecting', currentAttempt);
     });
 
     _transport.on('open', () {
       if (_closed) return;
       logger.debug('emit "open"');
-      // Emit 'open' event.
-      this.emit('open');
+
+      this._connected = true;
+
+      this.safeEmit('open');
     });
 
     _transport.on('disconnected', () {
+      if (_closed) return;
       logger.debug('emit "disconnected"');
 
-      this.emit('disconnected');
+      this._connected = false;
+
+      this.safeEmit('disconnected');
     });
 
-    _transport.on('error', (currentAttempt) {
-      logger.debug('emit "error" [currentAttempt:' + currentAttempt + ']');
-      this.emit('error', currentAttempt);
+    _transport.on('failed', (currentAttempt) {
+      if (_closed) return;
+      logger.debug('emit "failed" [currentAttempt:' + currentAttempt + ']');
+
+      this._connected = false;
+
+      this.safeEmit('failed', currentAttempt);
     });
 
     _transport.on('close', () {
       if (this._closed) return;
       this._closed = true;
       logger.debug('emit "close"');
-      // Emit 'close' event.
-      this.emit('close');
+
+      this._connected = false;
+
+      this.safeEmit('close');
     });
 
     this._transport.on('message', (message) {
@@ -122,101 +164,67 @@ class Peer extends EventEmitter {
     });
   }
 
-  Future<dynamic> send(method, data) async {
-    var completer = new Completer();
-    var request = Message.requestFactory(method, data);
-    try {
-      this._transport.send(request);
-      var handler = {
-        'resolve': (data2) {
-          var handler = _requestHandlers[request['id']];
-          if (handler == null)
-            completer.completeError('Request handler is not in map!');
-          handler['timer'].cancel();
-          this._requestHandlers.remove(request['id']);
-          completer.complete(data2);
-        },
-        'reject': (error) {
-          var handler = _requestHandlers[request['id']];
-          if (handler == null)
-            completer.completeError('Request handler is not in map!');
-          handler['timer'].cancel();
-          this._requestHandlers.remove(request['id']);
-          completer.completeError(error);
-        },
-        'timer': new Timer.periodic(new Duration(milliseconds: REQUEST_TIMEOUT),
-            (Timer timer) {
-          timer.cancel();
-          if (this._requestHandlers.remove(request['id']) == null)
-            completer.completeError('Request handler is not in map!');
-          completer.completeError('request timeout');
-        }),
-        close: () {
-          var handler = _requestHandlers[request['id']];
-          if (handler == null)
-            completer.completeError('Request handler is not in map!');
-          handler['timer'].cancel();
-          completer.completeError('peer closed');
-        }
-      };
-      // Add handler stuff to the Map.
-      this._requestHandlers[request['id']] = handler;
-    } catch (e) {
-      completer.completeError('transport error');
-    }
-    return completer.future;
-  }
-
   _handleRequest(request) {
-    this.emit(
-        'request',
-        // Request.
-        request,
-        // accept() function.
-        (data) {
-      var response = Message.successResponseFactory(request, data);
-      _transport.send(response).catchError((error) {
-        logger.warn('accept() failed, response could not be sent: ' + error);
-      });
-    }, (errorCode, errorReason) {
-      // reject() function.
-      if (!(errorCode is num)) {
-        errorReason = errorCode.toString();
-        errorCode = 500;
-      } else if (errorCode is num && errorReason is String) {
-        errorReason = errorReason.toString();
-      }
+    try {
+      this.emit('request', request,
+          // accept() function.
+          (data) {
+        final response = Message.createSuccessResponse(request, data);
+        _transport.send(response).catchError((error) {
+          logger.warn('accept() failed, response could not be sent: ' + error);
+        });
+      },
+          // reject() function.
+          (errorCode, errorReason) {
+        if (!(errorCode is num)) {
+          errorReason = errorCode.toString();
+          errorCode = 500;
+        } else if (errorCode is num && errorReason is String) {
+          errorReason = errorReason.toString();
+        }
 
-      var response =
-          Message.errorResponseFactory(request, errorCode, errorReason);
+        final response =
+            Message.createErrorResponse(request, errorCode, errorReason);
 
-      _transport.send(response).catchError((error) {
-        logger.warn('reject() failed, response could not be sent: ' + error);
+        _transport.send(response).catchError((error) {
+          logger.warn('reject() failed, response could not be sent: ' + error);
+        });
       });
-    });
+    } catch (error) {
+      final response =
+          Message.createErrorResponse(request, 500, error.toString());
+
+      this._transport.send(response).catchError(() => {});
+    }
   }
 
   _handleResponse(response) {
-    var handler = _requestHandlers[response['id']];
-    if (handler == null) {
+    final sent = _sents[response['id']];
+    if (sent == null) {
       logger.error('received response does not match any sent request');
       return;
     }
 
     if (response['ok'] != null && response['ok'] == true) {
-      var resolve = handler['resolve'];
+      var resolve = sent['resolve'];
       resolve(response['data']);
     } else {
       var error = {
         'code': response['errorCode'] ?? 500,
         'error': response['errorReason'] ?? ''
       };
-      var reject = handler['reject'];
+      var reject = sent['reject'];
       reject(error);
     }
   }
 
   _handleNotification(notification) {
-    this.emit('notification', notification);
+    this.safeEmit('notification', notification);
+  }
+
+  notify(method, data) {
+    var notification = Message.createNotification(method, data);
+    logger.debug('notify() [method:' + method + ']');
+    return this._transport.send(notification);
   }
 }
