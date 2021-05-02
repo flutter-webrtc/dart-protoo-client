@@ -5,6 +5,8 @@ import 'Logger.dart';
 import 'Message.dart';
 import 'transports/TransportInterface.dart';
 
+export 'transports/WebTransport.dart';
+
 final logger = new Logger('Peer');
 
 class Peer extends EnhancedEventEmitter {
