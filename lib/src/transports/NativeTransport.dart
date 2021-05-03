@@ -69,10 +69,11 @@ class NativeTransport extends TransportInterface {
   _runWebSocket() async {
     WebSocket.connect(this._url, protocols: ['protoo']).then((ws) {
       if (ws?.readyState == WebSocket.open) {
+        this._ws = ws;
         _onOpen();
 
         ws.listen((event) {
-          final message = Message.parse(event.data);
+          final message = Message.parse(event);
 
           if (message == null) return;
 

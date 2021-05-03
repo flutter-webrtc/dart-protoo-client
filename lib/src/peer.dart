@@ -4,20 +4,23 @@ import 'EnhancedEventEmitter.dart';
 import 'Logger.dart';
 import 'Message.dart';
 import 'transports/TransportInterface.dart';
-
-export 'transports/WebTransport.dart';
+export 'transports/NativeTransport.dart';
 
 final logger = new Logger('Peer');
 
 class Peer extends EnhancedEventEmitter {
   // Closed flag.
   bool _closed = false;
+
   // Connected flag.
   bool _connected = false;
+
   // Custom data object.
   dynamic _data = {};
+
   // Map of pending sent request objects indexed by request id.
   var _sents = Map<String, dynamic>();
+
   // Transport.
   TransportInterface _transport;
 
@@ -67,7 +70,7 @@ class Peer extends EnhancedEventEmitter {
     // This may throw.
     await this._transport.send(request);
 
-    int timeout = (1500 * (15 + (0.1 * this._sents.length))) as int;
+    int timeout = (1500 * (15 + (0.1 * this._sents.length))).toInt();
     final sent = {
       'id': request['id'],
       'method': request['method'],
