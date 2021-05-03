@@ -4,7 +4,8 @@ import 'EnhancedEventEmitter.dart';
 import 'Logger.dart';
 import 'Message.dart';
 import 'transports/TransportInterface.dart';
-export 'transports/NativeTransport.dart';
+export 'transports/NativeTransport.dart'
+    if (dart.library.html) 'transports/WebTransport.dart';
 
 final logger = new Logger('Peer');
 

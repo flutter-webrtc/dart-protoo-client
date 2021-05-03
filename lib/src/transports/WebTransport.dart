@@ -5,16 +5,16 @@ import '../Logger.dart';
 import '../Message.dart';
 import 'TransportInterface.dart';
 
-final logger = Logger('Logger::WebTransport');
+final _logger = Logger('Logger::WebTransport');
 
-class WebTransport extends TransportInterface {
+class Transport extends TransportInterface {
   bool _closed;
   String _url;
   dynamic _options;
   WebSocket _ws;
 
-  WebTransport(String url, {dynamic options}) : super(url, options: options) {
-    logger.debug('constructor() [url:$url, options:$options]');
+  Transport(String url, {dynamic options}) : super(url, options: options) {
+    _logger.debug('constructor() [url:$url, options:$options]');
     this._closed = false;
     this._url = url;
     this._options = options ?? {};
@@ -27,7 +27,7 @@ class WebTransport extends TransportInterface {
 
   @override
   close() {
-    logger.debug('close()');
+    _logger.debug('close()');
 
     this._closed = true;
     this.safeEmit('close');
@@ -35,7 +35,7 @@ class WebTransport extends TransportInterface {
     try {
       this._ws.close();
     } catch (error) {
-      logger.error('close() | error closing the WebSocket: $error');
+      _logger.error('close() | error closing the WebSocket: $error');
     }
   }
 
@@ -44,19 +44,19 @@ class WebTransport extends TransportInterface {
     try {
       this._ws.send(jsonEncode(message));
     } catch (error) {
-      logger.warn('send() failed:$error');
+      _logger.warn('send() failed:$error');
     }
   }
 
   _runWebSocket() {
     this._ws = new WebSocket(this._url, 'protoo');
     this._ws.onOpen.listen((e) {
-      logger.debug('onOpen');
+      _logger.debug('onOpen');
       this.safeEmit('open');
     });
 
     this._ws.onClose.listen((e) {
-      logger.warn(
+      _logger.warn(
           'WebSocket "close" event [wasClean:${e.wasClean}, code:${e.code}, reason:"${e.reason}"]');
       this._closed = true;
 
@@ -64,7 +64,7 @@ class WebTransport extends TransportInterface {
     });
 
     this._ws.onError.listen((e) {
-      logger.error('WebSocket "error" event');
+      _logger.error('WebSocket "error" event');
     });
 
     this._ws.onMessage.listen((e) {

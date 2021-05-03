@@ -5,17 +5,17 @@ import '../Logger.dart';
 import '../Message.dart';
 import 'TransportInterface.dart';
 
-final logger = Logger('Logger::WebTransport');
+final _logger = Logger('Logger::NativeTransport');
 
-class NativeTransport extends TransportInterface {
+class Transport extends TransportInterface {
   bool _closed;
   String _url;
   dynamic _options;
   WebSocket _ws;
 
-  NativeTransport(String url, {dynamic options})
+  Transport(String url, {dynamic options})
       : super(url, options: options) {
-    logger.debug('constructor() [url:$url, options:$options]');
+    _logger.debug('constructor() [url:$url, options:$options]');
     this._closed = false;
     this._url = url;
     this._options = options ?? {};
@@ -28,7 +28,7 @@ class NativeTransport extends TransportInterface {
 
   @override
   close() {
-    logger.debug('close()');
+    _logger.debug('close()');
 
     this._closed = true;
     this.safeEmit('close');
@@ -36,7 +36,7 @@ class NativeTransport extends TransportInterface {
     try {
       this._ws.close();
     } catch (error) {
-      logger.error('close() | error closing the WebSocket: $error');
+      _logger.error('close() | error closing the WebSocket: $error');
     }
   }
 
@@ -45,12 +45,12 @@ class NativeTransport extends TransportInterface {
     try {
       this._ws.add(jsonEncode(message));
     } catch (error) {
-      logger.warn('send() failed:$error');
+      _logger.warn('send() failed:$error');
     }
   }
 
   _onOpen() {
-    logger.debug('onOpen');
+    _logger.debug('onOpen');
     this.safeEmit('open');
   }
 
@@ -63,7 +63,7 @@ class NativeTransport extends TransportInterface {
   // }
 
   _onError(err) {
-    logger.error('WebSocket "error" event');
+    _logger.error('WebSocket "error" event');
   }
 
   _runWebSocket() async {
@@ -80,7 +80,7 @@ class NativeTransport extends TransportInterface {
           this.safeEmit('message', message);
         }, onError: _onError);
       } else {
-        logger.warn(
+        _logger.warn(
             'WebSocket "close" event code:${ws.closeCode}, reason:"${ws.closeReason}"]');
         this._closed = true;
 
