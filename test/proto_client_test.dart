@@ -1,12 +1,13 @@
 import 'package:protoo_client/protoo_client.dart';
-import 'package:protoo_client/src/transports/WebTransport.dart';
+import 'package:protoo_client/src/transports/NativeTransport.dart'
+  if (dart.library.html) 'package:protoo_client/src/transports/WebTransport.dart';
 
 final url = 'wss://v3demo.mediasoup.org:4443';
 final roomId = 'asdasdds';
 final peerId = 'zxcvvczx';
 
 main() async {
-  Peer peer = new Peer(WebTransport('$url/?roomId=$roomId&peerId=$peerId'));
+  Peer peer = new Peer(Transport('$url/?roomId=$roomId&peerId=$peerId'));
 
   peer.on('open', () {
     print('open');
