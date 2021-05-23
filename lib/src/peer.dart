@@ -177,8 +177,8 @@ class Peer extends EnhancedEventEmitter {
     try {
       this.emit('request', request,
           // accept() function.
-          (data) {
-        final response = Message.createSuccessResponse(request, data);
+          ([data]) {
+        final response = Message.createSuccessResponse(request, data ?? {});
         _transport.send(response).catchError((error) {
           logger.warn('accept() failed, response could not be sent: ' + error);
         });
