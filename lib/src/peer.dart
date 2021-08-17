@@ -23,7 +23,7 @@ class Peer extends EnhancedEventEmitter {
   var _sents = Map<String, dynamic>();
 
   // Transport.
-  TransportInterface _transport;
+  late TransportInterface _transport;
 
   Peer(TransportInterface transport) {
     _transport = transport;

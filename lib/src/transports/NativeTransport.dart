@@ -8,13 +8,12 @@ import 'TransportInterface.dart';
 final _logger = Logger('Logger::NativeTransport');
 
 class Transport extends TransportInterface {
-  bool _closed;
-  String _url;
-  dynamic _options;
-  WebSocket _ws;
+  late bool _closed;
+  late String _url;
+  late dynamic _options;
+  WebSocket? _ws;
 
-  Transport(String url, {dynamic options})
-      : super(url, options: options) {
+  Transport(String url, {dynamic options}) : super(url, options: options) {
     _logger.debug('constructor() [url:$url, options:$options]');
     this._closed = false;
     this._url = url;
@@ -34,7 +33,7 @@ class Transport extends TransportInterface {
     this.safeEmit('close');
 
     try {
-      this._ws.close();
+      this._ws?.close();
     } catch (error) {
       _logger.error('close() | error closing the WebSocket: $error');
     }
@@ -43,7 +42,7 @@ class Transport extends TransportInterface {
   @override
   Future send(message) async {
     try {
-      this._ws.add(jsonEncode(message));
+      this._ws?.add(jsonEncode(message));
     } catch (error) {
       _logger.warn('send() failed:$error');
     }
@@ -68,7 +67,7 @@ class Transport extends TransportInterface {
 
   _runWebSocket() async {
     WebSocket.connect(this._url, protocols: ['protoo']).then((ws) {
-      if (ws?.readyState == WebSocket.open) {
+      if (ws.readyState == WebSocket.open) {
         this._ws = ws;
         _onOpen();
 

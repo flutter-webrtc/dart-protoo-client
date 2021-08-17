@@ -3,7 +3,7 @@ version: 0.3.0
 description: Dart version of the protoo-client library.
 homepage: https://github.com/cloudwebrtc/dart-protoo-client
 environment:
-  sdk: ">=2.7.0 <3.0.0"
+  sdk: ">=2.12.0 <3.0.0"
 
 dependencies:
   events2: ^1.0.0

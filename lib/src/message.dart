@@ -8,7 +8,7 @@ final logger = new Logger('Message');
 class Message {
   static JsonEncoder encoder = new JsonEncoder();
   static JsonDecoder decoder = new JsonDecoder();
-  static Map<String, dynamic> parse(dynamic raw) {
+  static Map<String, dynamic>? parse(dynamic raw) {
     var object;
     final message = Map<String, dynamic>();
 
