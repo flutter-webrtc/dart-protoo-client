@@ -1,140 +1,119 @@
-import 'utils.dart' as utils;
-import 'logger.dart';
 import 'dart:convert';
 
-const APP_NAME = 'protoo-client';
-var logger = new Logger(APP_NAME);
+import 'Logger.dart';
+import 'Utils.dart' as utils;
 
-class Message
-{
+final logger = new Logger('Message');
+
+class Message {
   static JsonEncoder encoder = new JsonEncoder();
   static JsonDecoder decoder = new JsonDecoder();
+  static Map<String, dynamic>? parse(dynamic raw) {
+    var object;
+    final message = Map<String, dynamic>();
 
-	static Future<String> parse(raw)
-	{
-		var object;
-		var message;
+    try {
+      object = decoder.convert(raw);
+    } catch (error) {
+      logger.error('parse() | invalid JSON: %s' + error.toString());
 
-		try
-		{
-			object = decoder.convert(raw);
-		}
-		catch (error)
-		{
-			logger.failure('parse() | invalid JSON: ' + error);
-		}
+      return null;
+    }
 
-		// if (typeof object !== 'object' || Array.isArray(object))
-		// {
-		// 	logger.error('parse() | not an object');
-		// 	return;
-		// }
+    // Request.
+    if (object['request'] != null) {
+      message['request'] = true;
 
-		// Request.
-		if (object['request'])
-		{
-			message['request'] = true;
-
-      if(!(object['method'] is String)){
+      if (!(object['method'] is String)) {
         logger.failure('parse() | missing/invalid method field');
       }
 
-      if(!(object['id'] is num)){
+      if (!(object['id'] is num)) {
         logger.failure('parse() | missing/invalid id field');
       }
 
-			message['id'] = object['id'];
-			message['method'] = object['method'];
-			message['data'] = object['data'] ?? {};
-		}
-		// Response.
-		else if (object['response'])
-		{
-			message['response'] = true;
-      if(!(object['id'] is num)){
+      message['id'] = object['id'];
+      message['method'] = object['method'];
+      message['data'] = object['data'] ?? {};
+    }
+    // Response.
+    else if (object['response'] != null) {
+      message['response'] = true;
+      if (!(object['id'] is num)) {
         logger.failure('parse() | missing/invalid id field');
       }
 
-			message['id'] = object['id'];
+      message['id'] = object['id'];
 
-			// Success.
-			if (object['ok'])
-			{
-				message['ok'] = true;
-				message['data'] = object['data'] ?? {};
-			}
-			// Error.
-			else
-			{
-				message['errorCode'] = object['errorCode'];
-				message['errorReason'] = object['errorReason'];
-			}
-		}
-		// Notification.
-		else if (object['notification'])
-		{
-			message['notification'] = true;
-      if(!(object['method'] is String)){
+      // Success.
+      if (object['ok']) {
+        message['ok'] = true;
+        message['data'] = object['data'] ?? {};
+      }
+      // Error.
+      else {
+        message['errorCode'] = object['errorCode'];
+        message['errorReason'] = object['errorReason'];
+      }
+    }
+    // Notification.
+    else if (object['notification'] != null) {
+      message['notification'] = true;
+      if (!(object['method'] is String)) {
         logger.failure('parse() | missing/invalid method field');
       }
 
-			message['method'] = object['method'];
-			message['data'] = object['data'] ?? {};
-		}else {
-			logger.failure('parse() | missing request/response field');
-		}
+      message['method'] = object['method'];
+      message['data'] = object['data'] ?? {};
+    }
+    // Invalid.
+    else {
+      logger.failure('parse() | missing request/response field');
+      return null;
+    }
 
-		return message;
-	}
+    return message;
+  }
 
-	static requestFactory(method, data)
-	{
-		var requestObj =
-		{
-			'request' : true,
-			'id'      : utils.randomNumber,
-			'method'  : method,
-			'data'    : data ?? {}
-		};
+  static createRequest(method, data) {
+    var requestObj = {
+      'request': true,
+      'id': utils.randomNumber,
+      'method': method,
+      'data': data ?? {}
+    };
+    return requestObj;
+  }
 
-		return requestObj;
-	}
+  static createSuccessResponse(request, data) {
+    var responseObj = {
+      'response': true,
+      'id': request['id'],
+      'ok': true,
+      'data': data ?? {}
+    };
 
-	static successResponseFactory(request, data)
-	{
-		var responseObj =
-		{
-			'response' : true,
-			'id'       : request['id'],
-			'ok'       : true,
-			'data'    : data ?? {}
-		};
+    return responseObj;
+  }
 
-		return responseObj;
-	}
+  static createErrorResponse(request, errorCode, errorReason) {
+    var responseObj = {
+      'response': true,
+      'id': request['id'],
+      'errorCode': errorCode,
+      'errorReason': errorReason
+    };
 
-	static errorResponseFactory(request, errorCode, errorReason)
-	{
-		var responseObj =
-		{
-			'response'    : true,
-			'id'       : request['id'],
-			'errorCode'   : errorCode,
-			'errorReason' : errorReason
-		};
+    return responseObj;
+  }
 
-		return responseObj;
-	}
+  static createNotification(method, data) {
+    var notificationObj = {
+      'notification': true,
+      'method': method,
+      'data ': data ?? {},
+    };
 
-	static notificationFactory(method, data)
-	{
-		var notificationObj =
-		{
-			'notification' : true,
-			'method'       : method,
-			'data '       : data ?? {},
-		};
-
-		return notificationObj;
-	}
+    return notificationObj;
+  }
 }

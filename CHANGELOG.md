@@ -1,5 +1,9 @@
 ## Changelog
 --------------------------------------------
+[0.3.1]
+
+* Updated package using https://github.com/ZackMitkin/dart-protoo-client as reference and added null-safety
+
 [0.2.0] - 2019.12.18
 
 * Add support for Flutter Web.
