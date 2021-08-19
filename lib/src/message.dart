@@ -46,7 +46,7 @@ class Message {
       message['id'] = object['id'];
 
       // Success.
-      if (object['ok']) {
+      if (object['ok'] is bool) {
         message['ok'] = true;
         message['data'] = object['data'] ?? {};
       }
