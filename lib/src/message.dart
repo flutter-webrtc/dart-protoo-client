@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'Logger.dart';
-import 'Utils.dart' as utils;
+import 'logger.dart';
+import 'utils.dart' as utils;
 
 final logger = new Logger('Message');
 

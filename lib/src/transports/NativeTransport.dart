@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import '../Logger.dart';
-import '../Message.dart';
+import '../logger.dart';
+import '../message.dart';
 import 'TransportInterface.dart';
 
 final _logger = Logger('Logger::NativeTransport');
