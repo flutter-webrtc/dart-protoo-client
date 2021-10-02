@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'EnhancedEventEmitter.dart';
-import 'Logger.dart';
-import 'Message.dart';
+import 'logger.dart';
+import 'message.dart';
 import 'transports/TransportInterface.dart';
 export 'transports/NativeTransport.dart'
     if (dart.library.html) 'transports/WebTransport.dart';
