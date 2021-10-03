@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:events2/events2.dart';
 
-import 'Logger.dart';
+import 'logger.dart';
 
 Logger _logger = Logger('EnhancedEventEmitter');
 
