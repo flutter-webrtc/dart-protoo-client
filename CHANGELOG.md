@@ -1,7 +1,9 @@
 ## Changelog
 --------------------------------------------
 [0.3.2]
+
 * Fix compile error in case insensitive system. Thanks to @niceice220
+
 [0.3.1]
 
 * Updated package using https://github.com/ZackMitkin/dart-protoo-client as reference and added null-safety
