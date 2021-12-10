@@ -1,5 +1,10 @@
-## Changelog
+# Changelog
+
 --------------------------------------------
+[0.3.3]
+
+* Use SentObject instead of map.
+
 [0.3.2]
 
 * Fix compile error in case insensitive system. Thanks to @niceice220
