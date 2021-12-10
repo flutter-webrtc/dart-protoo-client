@@ -9,6 +9,22 @@ export 'transports/NativeTransport.dart'
 
 final logger = new Logger('Peer');
 
+class SentObject {
+  final int id;
+  final String method;
+  final Function(dynamic) resolve;
+  final Function(dynamic) reject;
+  final Timer timer;
+  final Function() close;
+  SentObject(
+      {required this.id,
+      required this.method,
+      required this.resolve,
+      required this.reject,
+      required this.timer,
+      required this.close});
+}
+
 class Peer extends EnhancedEventEmitter {
   // Closed flag.
   bool _closed = false;
@@ -20,7 +36,7 @@ class Peer extends EnhancedEventEmitter {
   dynamic _data = {};
 
   // Map of pending sent request objects indexed by request id.
-  var _sents = Map<String, dynamic>();
+  var _sents = Map<String, SentObject>();
 
   // Transport.
   late TransportInterface _transport;
@@ -72,33 +88,29 @@ class Peer extends EnhancedEventEmitter {
     await this._transport.send(request);
 
     int timeout = (1500 * (15 + (0.1 * this._sents.length))).toInt();
-    final sent = {
-      'id': request['id'],
-      'method': request['method'],
-      'resolve': (data2) {
-        final sent = _sents.remove(requestId);
-        if (sent == null) return;
-        sent['timer'].cancel();
-        completer.complete(data2);
-      },
-      'reject': (error) {
-        final sent = _sents.remove(requestId);
-        if (sent == null) return;
-        sent['timer'].cancel();
-        completer.completeError(error);
-      },
-      'timer': new Timer.periodic(new Duration(milliseconds: timeout),
-          (Timer timer) {
-        if (this._sents.remove(requestId) == null) return;
-
-        completer.completeError('request timeout');
-      }),
-      'close': () {
-        var handler = _sents[requestId];
-        handler['timer'].cancel();
-        completer.completeError('peer closed');
-      }
-    };
+    final sent = SentObject(
+        id: request['id'],
+        method: request['method'],
+        resolve: (data2) {
+          final sent = _sents.remove(requestId);
+          sent?.timer.cancel();
+          completer.complete(data2);
+        },
+        reject: (error) {
+          final sent = _sents.remove(requestId);
+          sent?.timer.cancel();
+          completer.completeError(error);
+        },
+        timer: new Timer.periodic(new Duration(milliseconds: timeout),
+            (Timer timer) {
+          if (this._sents.remove(requestId) == null) return;
+          completer.completeError('request timeout');
+        }),
+        close: () {
+          final sent = _sents[requestId];
+          sent?.timer.cancel();
+          completer.completeError('peer closed');
+        });
 
     _sents[requestId] = sent;
     return completer.future;
@@ -215,15 +227,13 @@ class Peer extends EnhancedEventEmitter {
     }
 
     if (response['ok'] != null && response['ok'] == true) {
-      var resolve = sent['resolve'];
-      resolve(response['data']);
+      sent.resolve(response['data']);
     } else {
       var error = {
         'code': response['errorCode'] ?? 500,
         'error': response['errorReason'] ?? ''
       };
-      var reject = sent['reject'];
-      reject(error);
+      sent.reject(error);
     }
   }
 
